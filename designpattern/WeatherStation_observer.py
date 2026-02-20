@@ -1,87 +1,120 @@
 import random
 import time
-from dataclasses import dataclass
+import datetime
+from abc import ABC, abstractmethod
 
+class Observer(ABC):
 
-@dataclass(frozen=True)
-class WeatherMeasures:
-    temperature: int
-    humidity: int
-    pressure: int
+    @abstractmethod
+    def notify(self, subject):
+        pass
 
-
-class DisplayPublisher:
-    def __init__(self, *displays):
-        self.__displays = displays
-
-    def publish(self, measures):
-        for display in self.__displays:
-            display.display(
-                measures.temperature,
-                measures.humidity,
-                measures.pressure,
-            )
-
-class StatsDisplay:
-    def display(self, temperature, humidity, pressure):
-        print(f"Stats - Temperature: {temperature}°C, Humidity: {humidity}%, Pressure: {pressure} hPa")
+class StatsDisplay(Observer):
     
-class RealtimeDisplay:
-    def display(self, temperature, humidity, pressure):
-        print(f"Realtime - Temperature: {temperature}°C, Humidity: {humidity}%, Pressure: {pressure} hPa")
+    def notify(self, subject):
+        self.__display(subject.temperature, subject.humidity, subject.pressure)
+    
+    def __display(self, temperature, humidity, pressure):
+        print(f'Stats: {temperature}, {humidity}, {pressure}')
 
-class DailyMaxDisplay:
+class RealTimeDisplay(Observer):
+    
+    def notify(self, subject):
+        self.__display(subject.temperature, subject.humidity, subject.pressure)
+    
+    def __display(self, temperature, humidity, pressure):
+        print(f'Real Time: {temperature}, {humidity}, {pressure}')
+
+class DailyMaxDisplay(Observer):
+    
     def __init__(self):
-        self.max_temperature = 0
-        self.max_humidity = 0
-        self.max_pressure = 0
+        self.__max_temperature = 0
+        self.__max_pressure = 0
+        self.__max_humidity = 0
     
-    def calculate_max(self, temperature, humidity, pressure):
-        if temperature > self.max_temperature:
-            self.max_temperature = temperature
-        if humidity > self.max_humidity:
-            self.max_humidity = humidity
-        if pressure > self.max_pressure:
-            self.max_pressure = pressure
+    def notify(self, subject):
+        self.__calculate(subject.temperature, subject.pressure, subject.humidity)
+    
+    def __calculate(self, temperature, pressure, humidity):
+        if humidity > self.__max_humidity:
+            self.__max_humidity = humidity
+        if pressure > self.__max_pressure:
+            self.__max_pressure = pressure
+        if temperature > self.__max_temperature:
+            self.__max_temperature = temperature
+        print(f'Max: {self.__max_temperature} {self.__max_pressure} {self.__max_humidity}')
 
-    def display(self, temperature, humidity, pressure):
-        self.max_temperature = max(self.max_temperature, temperature)
-        self.max_humidity = max(self.max_humidity, humidity)
-        self.max_pressure = max(self.max_pressure, pressure)
-        print(f"Daily Max - Max Temperature: {self.max_temperature}°C, Max Humidity: {self.max_humidity}%, Max Pressure: {self.max_pressure} hPa")
+class MinTemperatureDisplay(Observer):
+    
+    def notify(self, subject):
+        print(f'Min temperature display {subject.temperature}')
 
-class WeatherStation:
-    def __init__(self, display_publisher):
-        self.__display_publisher = display_publisher
+# do not be anymore notified
 
-    def get_temperature(self):
+class Subject(ABC):
+    
+    def __init__(self):
+        self.__observers = []
+
+    def add_observer(self, observer:Observer):
+        if isinstance(observer, Observer):
+            self.__observers.append(observer)
+
+    @property
+    def observers(self):
+        return self.__observers.copy()
+
+class WeatherStation(Subject):
+    
+    def __init__(self):
+        super().__init__()
+        self.__temperature = 0
+        self.__humidity = 0
+        self.__pressure = 0
+        
+    @property
+    def temperature(self):
+        return self.__temperature
+    
+    @property
+    def humidity(self):
+        return self.__humidity
+    
+    @property
+    def pressure(self):
+        return self.__pressure
+    
+    def __get_temperature(self):
         return random.randint(-30, 50)
     
-    def get_humidity(self):
+    def __get_humidity(self):
         return random.randint(0, 100)
     
-    def get_pressure(self):
+    def __get_pressure(self):
         return random.randint(800, 1300)
-
-    def read_measures(self):
-        return WeatherMeasures(
-            temperature=self.get_temperature(),
-            humidity=self.get_humidity(),
-            pressure=self.get_pressure(),
-        )
     
-    def mesures_changed(self):
-        self.__display_publisher.publish(self.read_measures())
+    def measures_changed(self):
+        # get all measures
+        self.__temperature = self.__get_temperature()
+        self.__humidity = self.__get_humidity()
+        self.__pressure = self.__get_pressure()
+        # display on screen
+        print(datetime.datetime.now())
+        for display in self.observers:
+            display.notify(self)
         
         
-if __name__ == "__main__":
+        
+if __name__ == '__main__':
     stats = StatsDisplay()
-    real_time = RealtimeDisplay()
+    real_time = RealTimeDisplay()
     daily_max = DailyMaxDisplay()
-    publisher = DisplayPublisher(stats, real_time, daily_max)
-    polar_station = WeatherStation(publisher)
-    
+    daily_max_backup = DailyMaxDisplay()
+    min_display = MinTemperatureDisplay()
+    polar_station = WeatherStation()
+    for observer in [stats, real_time, daily_max, daily_max_backup, min_display]:
+        polar_station.add_observer(observer)
     for _ in range(10):
-        polar_station.mesures_changed()
+        polar_station.measures_changed()
         time.sleep(1)
-        
+    
