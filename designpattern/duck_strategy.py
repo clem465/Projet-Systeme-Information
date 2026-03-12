@@ -1,49 +1,54 @@
 from abc import ABC, abstractmethod
 
-class Duck(ABC):
-    
-    def __init__(self, fly_behavior,quack_behavior,display_behavior):
-        self.__fly_behavior = fly_behavior
-        self.__quack_behavior = quack_behavior
-        self.__display_behavior = display_behavior
-    
-    def fly(self):
-        self.__fly_behavior.fly()
-
-    def set_fly_behavior(self, fly_behavior):
-        self.__fly_behavior = fly_behavior
-    
-    @abstractmethod
-    def quack(self):
-        self.__quack_behavior.quack()
-
-    def set_quack_behavior(self, quack_behavior):
-        self.__quack_behavior = quack_behavior
-
-    def display(self):
-        self.__display_behavior.display()
-    
-    @abstractmethod
-    def display(self):
-        pass
-
 class FlyBehavior(ABC):
     
     @abstractmethod
     def fly(self):
         pass
 
-class FlyNone:
+class QuackBehavior(ABC):
+    
+    @abstractmethod
+    def quack(self):
+        pass
+
+class DisplayBehavior(ABC):
+    
+    @abstractmethod
+    def display(self):
+        pass
+
+class Duck(ABC):
+    
+    def __init__(self, fly_behavior:FlyBehavior, quack_behavior:QuackBehavior, display_behavior:DisplayBehavior):
+        self.__fly_behavior = fly_behavior
+        self.__quack_behavior = quack_behavior
+        self.__display_behavior = display_behavior
+    
+    def fly(self):
+        self.__fly_behavior.fly()
+    
+    def quack(self):
+        self.__quack_behavior.quack()
+        
+    def display(self):
+        self.__display_behavior.display()
+
+    def change_fly_behavior(self, fly_behavior):
+        self.__fly_behavior = fly_behavior
+
+
+class FlyNone(FlyBehavior):
     
     def fly(self):
         print('I believe I can fly')
 
-class FlyCloud:
+class FlyCloud(FlyBehavior):
     
     def fly(self):
         print('Fly in the cloud')
 
-class FlyDry:
+class FlyDry(FlyBehavior):
     
     def fly(self):
         print('Fly dry')
@@ -52,36 +57,43 @@ class FlyDry:
 class MallardDuck(Duck):
     
     def __init__(self):
-        super().__init__(fly_behavior=FlyCloud())
+        super().__init__(
+            fly_behavior=FlyDry(),
+            quack_behavior=QuackLoud(),
+            display_behavior=DisplayBold())
     
-    def quack(self):
-        print('Quack loud')
-        
-    def display(self):
-        print('I"m MallardDuck')
-
 
 class RedHeadDuck(Duck):
     
     def __init__(self):
-        super().__init__(fly_behavior=FlyDry())   
+        super().__init__(
+            fly_behavior=FlyDry(),
+            quack_behavior=QuackLoud(),
+            display_behavior=DisplayBold())   
         
-    def quack(self):
-        print('Quiet loud')
-        
-    def display(self):
-        print('I"m read head')
 
 class RubberDuck(Duck):
     
     def __init__(self):
-        super().__init__(fly_behavior=FlyNone())
+        super().__init__(fly_behavior=FlyNone(),
+                    quack_behavior=QuackLoud(),
+                    display_behavior=DisplayBold())
         
+
+class QuackLoud(QuackBehavior):
+    
     def quack(self):
-        print('Pwick')
+        print('Quack loud')
         
+class BeQuiet(QuackBehavior):
+    
+    def quack(self):
+        print('....')
+
+class DisplayBold(DisplayBehavior):
+    
     def display(self):
-        print('Yellow')
+        print('Bold duck')
 
 if __name__ == '__main__':
     donald = MallardDuck()
@@ -90,5 +102,5 @@ if __name__ == '__main__':
     donald.fly()
     picsou.fly()
     rubber.fly()
-    picsou.set_fly_behavior(FlyNone())
+    picsou.change_fly_behavior(FlyNone())
     picsou.fly() # I believe I can fly expected ???
