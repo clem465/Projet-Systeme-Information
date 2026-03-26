@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from weatherstation_observer import Subject
 
 class FlyBehavior(ABC):
     
@@ -18,18 +19,20 @@ class DisplayBehavior(ABC):
     def display(self):
         pass
 
-class Duck(ABC):
+class Duck(Subject, ABC):
     
     def __init__(self, fly_behavior:FlyBehavior, quack_behavior:QuackBehavior, display_behavior:DisplayBehavior):
+        super().__init__()
         self.__fly_behavior = fly_behavior
         self.__quack_behavior = quack_behavior
         self.__display_behavior = display_behavior
     
     def fly(self):
         self.__fly_behavior.fly()
-    
+
     def quack(self):
         self.__quack_behavior.quack()
+        self.notify()
         
     def display(self):
         self.__display_behavior.display()
@@ -37,6 +40,12 @@ class Duck(ABC):
     def change_fly_behavior(self, fly_behavior):
         self.__fly_behavior = fly_behavior
 
+    def notify(self):
+        for observer in super().observers:
+            observer.notify(self)
+            
+    def __repr__(self) -> str:
+        return self.__class__.__name__
 
 class FlyNone(FlyBehavior):
     

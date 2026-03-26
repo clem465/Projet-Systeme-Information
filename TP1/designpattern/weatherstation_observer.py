@@ -63,6 +63,11 @@ class Subject(ABC):
     @property
     def observers(self):
         return self.__observers.copy()
+    
+    @abstractmethod
+    def notify(self):
+        ...
+
 
 class WeatherStation(Subject):
     
@@ -92,6 +97,9 @@ class WeatherStation(Subject):
     
     def __get_pressure(self):
         return random.randint(800, 1300)
+    
+    def notify(self):
+        self.measures_changed()
     
     def measures_changed(self):
         # get all measures
